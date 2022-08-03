@@ -1,10 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:myapp3/firebase_options.dart';
 
-Future<void> main() async {
+void main() {
   // Firebase初期化
-  await Firebase.initializeApp();
+  Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(MyApp());
 }
 
@@ -20,6 +23,11 @@ class MyApp extends StatelessWidget {
       home: MyAuthPage(),
     );
   }
+}
+
+class MyAuthPage extends StatefulWidget {
+  @override
+  _MyAuthPageState createState() => _MyAuthPageState();
 }
 
 class _MyAuthPageState extends State<MyAuthPage> {
@@ -42,10 +50,13 @@ class _MyAuthPageState extends State<MyAuthPage> {
           padding: EdgeInsets.all(32),
           child: Column(
             children: <Widget>[
-              TextFormField(/* --- 省略 --- */),
-              TextFormField(/* --- 省略 --- */),
-              ElevatedButton(/* --- 省略 --- */),
-              const SizedBox(height: 32),
+              //TextFormField(/* --- 省略 --- */),
+              //TextFormField(/* --- 省略 --- */),
+              //ElevatedButton(
+              //  onPressed: () {},
+              //  child: null,
+              //),
+              const SizedBox(height: 200),
               TextFormField(
                 decoration: InputDecoration(labelText: "メールアドレス"),
                 onChanged: (String value) {
