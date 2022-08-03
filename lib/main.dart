@@ -1,108 +1,111 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:myapp3/firebase_options.dart';
+import 'firebase_options.dart';
 
-void main() {
-  // Firebase初期化
-  Firebase.initializeApp(
+Future<void> main() async {
+  // Fireabse初期化
+  await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyAuthPage(),
+      home: MyFirestorePage(),
     );
   }
 }
 
-class MyAuthPage extends StatefulWidget {
+class MyFirestorePage extends StatefulWidget {
   @override
-  _MyAuthPageState createState() => _MyAuthPageState();
+  _MyFirestorePageState createState() => _MyFirestorePageState();
 }
 
-class _MyAuthPageState extends State<MyAuthPage> {
-  // 入力されたメールアドレス
-  String newUserEmail = "";
+class _MyFirestorePageState extends State<MyFirestorePage> {
+  // 作成したドキュメント一覧
+  //ここはludeさんに教えてもらった！
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> documentList = [];
+  String newUserName = "";
   // 入力されたパスワード
-  String newUserPassword = "";
-  // 入力されたメールアドレス（ログイン）
-  String loginUserEmail = "";
-  // 入力されたパスワード（ログイン）
-  String loginUserPassword = "";
-  // 登録・ログインに関する情報を表示
-  String infoText = "";
-
+  String newUserAge = "";
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Container(
-          padding: EdgeInsets.all(32),
-          child: Column(
-            children: <Widget>[
-              //TextFormField(/* --- 省略 --- */),
-              //TextFormField(/* --- 省略 --- */),
-              //ElevatedButton(
-              //  onPressed: () {},
-              //  child: null,
-              //),
-              const SizedBox(height: 200),
-              TextFormField(
-                decoration: InputDecoration(labelText: "メールアドレス"),
-                onChanged: (String value) {
-                  setState(() {
-                    loginUserEmail = value;
-                  });
-                },
-              ),
-              TextFormField(
-                decoration: InputDecoration(labelText: "パスワード"),
-                obscureText: true,
-                onChanged: (String value) {
-                  setState(() {
-                    loginUserPassword = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    // メール/パスワードでログイン
-                    final FirebaseAuth auth = FirebaseAuth.instance;
-                    final UserCredential result =
-                        await auth.signInWithEmailAndPassword(
-                      email: loginUserEmail,
-                      password: loginUserPassword,
-                    );
-                    // ログインに成功した場合
-                    final User user = result.user!;
-                    setState(() {
-                      infoText = "ログインOK：${user.email}";
-                    });
-                  } catch (e) {
-                    // ログインに失敗した場合
-                    setState(() {
-                      infoText = "ログインNG：${e.toString()}";
-                    });
-                  }
-                },
-                child: Text("ログイン"),
-              ),
-              const SizedBox(height: 8),
-              Text(infoText),
-            ],
-          ),
+        child: Column(
+          children: <Widget>[
+            TextFormField(
+              decoration: InputDecoration(labelText: "お名前"),
+              onChanged: (String value) {
+                setState(() {
+                  newUserName = value;
+                });
+              },
+            ),
+            TextFormField(
+              decoration: InputDecoration(labelText: "年齢"),
+              //入力を見えなくする
+              //obscureText: true,
+              onChanged: (String value) {
+                setState(() {
+                  newUserAge = value;
+                });
+              },
+            ),
+            ElevatedButton(
+              child: Text('コレクション＋ドキュメント作成'),
+              onPressed: () async {
+                // ドキュメント作成
+                await FirebaseFirestore.instance
+                    .collection('users') // コレクションID
+                    .doc('id_abc') // ドキュメントID
+                    .set({'name': newUserName, 'age': newUserAge}); // データ
+              },
+            ),
+            ElevatedButton(
+              child: Text('サブコレクション＋ドキュメント作成'),
+              onPressed: () async {
+                // サブコレクション内にドキュメント作成
+                await FirebaseFirestore.instance
+                    .collection('users') // コレクションID
+                    .doc('id_abc') // ドキュメントID << usersコレクション内のドキュメント
+                    .collection('orders') // サブコレクションID
+                    .doc('id_123') // ドキュメントID << サブコレクション内のドキュメント
+                    .set({'price': 600, 'date': '9/13'});
+              },
+            ),
+            ElevatedButton(
+              child: Text('ドキュメント一覧取得'),
+              onPressed: () async {
+                // コレクション内のドキュメント一覧を取得
+                final snapshot =
+                    await FirebaseFirestore.instance.collection('users').get();
+                // 取得したドキュメント一覧をUIに反映
+                setState(() {
+                  documentList = snapshot.docs;
+                });
+              },
+            ),
+            // コレクション内のドキュメント一覧を表示
+            Column(
+              children: documentList.map((document) {
+                return ListTile(
+                  title: Text('${document['name']}さん'),
+                  subtitle: Text('${document['age']}歳'),
+                );
+              }).toList(),
+            ),
+          ],
         ),
       ),
     );
